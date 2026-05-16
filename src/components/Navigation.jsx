@@ -75,7 +75,7 @@ export default function Navigation({ user, userRole, onRoleSwitch }) {
         })}
       </nav>
 
-        {(userRole === 'owner' || window.location.hostname === 'localhost') && (
+        {true && (  // TEMPORÄR für MVP-Testing!
           <div className="px-4 py-3 bg-gray-800 rounded-lg mb-3">
             <p className="text-xs text-gray-500 mb-2">Test-Rolle</p>
             <select
