@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getInterventions, getInvoices, getClients } from '../services/supabase';
 import { Calendar, DollarSign, Users, AlertCircle } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
 
 export default function Dashboard({ userRole }) {
   const [interventions, setInterventions] = useState([]);
@@ -9,10 +10,17 @@ export default function Dashboard({ userRole }) {
   const [loading, setLoading] = useState(true);
 
   
-  if (userRole !== 'owner') {
-    return <div className="p-4 text-gray-400">Nur Owner Zugriff</div>;
+  if (userRole === 'technician') {
+    return <Navigate to="/technician" />;
   }
 
+  if (userRole === 'manager') {
+    return <Navigate to="/manager" />;
+  }
+
+  if (userRole !== 'owner') {
+    return <div className="p-4 text-gray-400">Zugriff verweigert</div>;
+  }
   useEffect(() => {
     loadData();
   }, []);

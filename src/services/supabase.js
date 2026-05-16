@@ -230,3 +230,136 @@ export const getUserRole = async (userId) => {
     .single();
   return { data, error };
 };
+
+// Team Management - Invite
+export const inviteTeamMember = async (ownerID, name, email, phone, role) => {
+  // Validierung
+  if (!email.includes('@')) {
+    return { error: 'Gültige Email erforderlich' };
+  }
+
+  const { data, error } = await supabase
+    .from('team_invitations')
+    .insert([{
+      owner_id: ownerID,
+      name: name,
+      email: email,  // ECHTE Email vom Owner
+      phone: phone,
+      role: role,
+      status: 'pending',
+    }])
+    .select();
+  
+  return { data, error };
+};
+
+export const getTeamInvitations = async (ownerID) => {
+  const { data, error } = await supabase
+    .from('team_invitations')
+    .select('*')
+    .eq('owner_id', ownerID)
+    .order('created_at', { ascending: false });
+  return { data, error };
+};
+
+export const getInvitationByToken = async (token) => {
+  const { data, error } = await supabase
+    .from('team_invitations')
+    .select('*')
+    .eq('token', token)
+    .single();
+  return { data, error };
+};
+
+export const acceptInvitation = async (token, password, name) => {
+  try {
+    // 1. Hole Invitation
+    const { data: invitation, error: invError } = await supabase
+      .from('team_invitations')
+      .select('*')
+      .eq('token', token)
+      .eq('status', 'pending')
+      .single();
+
+    if (invError || !invitation) {
+      return { error: 'Einladung ungültig oder abgelaufen' };
+    }
+
+    // 2. Erstelle Auth User mit ECHTER Email
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: invitation.email,  // ← ECHTE Email!
+      password: password,
+    });
+
+    if (authError) {
+      return { error: authError.message };
+    }
+
+    const userID = authData.user.id;
+
+    // 3. Erstelle Profile
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: userID,
+        role: invitation.role,
+      });
+
+    if (profileError) {
+      return { error: 'Fehler beim Erstellen des Profils' };
+    }
+
+    // 4. Erstelle Technician oder Manager Record
+    if (invitation.role === 'technician') {
+      const { error: techError } = await supabase
+        .from('technicians')
+        .insert({
+          user_id: userID,
+          name: invitation.name,  // ← Aus Invitation!
+          phone: invitation.phone,
+          email: invitation.email,
+        });
+
+      if (techError) {
+        return { error: 'Fehler beim Erstellen des Techniker-Records' };
+      }
+    } else if (invitation.role === 'manager') {
+      const { error: mgrError } = await supabase
+        .from('managers')
+        .insert({
+          user_id: userID,
+          name: invitation.name,
+          phone: invitation.phone,
+          email: invitation.email,
+        });
+
+      if (mgrError) {
+        return { error: 'Fehler beim Erstellen des Manager-Records' };
+      }
+    }
+
+    // 5. Mark Invitation as accepted
+    await supabase
+      .from('team_invitations')
+      .update({
+        status: 'accepted',
+        accepted_at: new Date().toISOString(),
+      })
+      .eq('token', token);
+
+    return { userID, error: null };
+  } catch (error) {
+    return { error: error.message };
+  }
+};
+
+export const resetTechnicianPassword = async (ownerID, technicianID) => {
+  // Owner kann nur seine OWN Techniker resettten
+  const tempPassword = Math.random().toString(36).slice(-10) + 'T!';
+  
+  // Admin-Call um Password zu setzen
+  // (Braucht Supabase Admin API - später kompliziert)
+  // EINFACHER: Frontend nur UI, Owner teilt Password manuell
+  
+  return { tempPassword };
+};

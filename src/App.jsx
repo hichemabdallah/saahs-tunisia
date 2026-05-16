@@ -10,6 +10,9 @@ import Navigation from './components/Navigation';
 import Technicians from './components/Technicians';
 import TechnicianDashboard from './components/TechnicianDashboard';
 import ManagerDashboard from './components/ManagerDashboard';
+import TeamManagement from './components/TeamManagement';
+import AcceptInvite from './components/AcceptInvite';
+import TeamMembers from './components/TeamMembers';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -49,6 +52,10 @@ export default function App() {
   }
 
   if (!user) {
+        const pathname = window.location.pathname;
+    if (pathname === '/accept-invite') {
+      return <AcceptInvite />;
+    }
     return <Login />;
   }
 
@@ -58,14 +65,24 @@ export default function App() {
         <Navigation user={user} userRole={userRole} onRoleSwitch={setUserRole} />
         <div className="flex-1 overflow-auto">
           <Routes>
+            <Route path="/accept-invite" element={<AcceptInvite />} /> 
             <Route path="/dashboard" element={<Dashboard userRole={userRole} />} />
             <Route path="/clients" element={<Clients />} />
             <Route path="/technicians" element={<Technicians />} />
             <Route path="/interventions" element={<Interventions />} />
             <Route path="/invoices" element={<Invoices />} />
-            <Route path="/" element={<Navigate to="/dashboard" />} />
+            <Route 
+              path="/" 
+              element={
+                userRole === 'technician' ? <Navigate to="/technician" /> :
+                userRole === 'manager' ? <Navigate to="/manager" /> :
+                <Navigate to="/dashboard" />
+              } 
+            />
             <Route path="/technician" element={<TechnicianDashboard userRole={userRole} />} />
             <Route path="/manager" element={<ManagerDashboard userRole={userRole} />} />
+            <Route path="/team" element={<TeamManagement user={user} userRole={userRole} />} />
+            <Route path="/team-members" element={<TeamMembers user={user} userRole={userRole} />} />
           </Routes>
         </div>
       </div>

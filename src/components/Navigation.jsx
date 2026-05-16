@@ -9,15 +9,38 @@ export default function Navigation({ user, userRole, onRoleSwitch }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
 
-  const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: BarChart3 },
-    { path: '/clients', label: 'Kunden', icon: Users },
-    { path: '/technicians', label: 'Techniker', icon: Users },
-    { path: '/interventions', label: 'Einsätze', icon: Calendar },
-    { path: '/technician', label: 'Meine Einsätze', icon: Calendar },
-    { path: '/manager', label: 'Genehmigungen', icon: CheckCircle },
-    { path: '/invoices', label: 'Rechnungen', icon: FileText },
-  ];
+  const getNavItems = () => {
+    const baseItems = [
+      { path: '/dashboard', label: 'Dashboard', icon: BarChart3 },
+    ];
+
+    if (userRole === 'owner') {
+      return [
+        ...baseItems,
+        { path: '/clients', label: 'Kunden', icon: Users },
+        { path: '/technicians', label: 'Techniker', icon: Users },
+        { path: '/interventions', label: 'Einsätze', icon: Calendar },
+        { path: '/invoices', label: 'Rechnungen', icon: FileText },
+        { path: '/team', label: 'Team', icon: Users },
+        { path: '/team-members', label: 'Team-Mitglieder', icon: Users },
+      ];
+    } else if (userRole === 'technician') {
+      return [
+        ...baseItems,
+        { path: '/technician', label: 'Meine Einsätze', icon: Calendar },
+      ];
+    } else if (userRole === 'manager') {
+      return [
+        ...baseItems,
+        { path: '/manager', label: 'Genehmigungen', icon: CheckCircle },
+        { path: '/invoices', label: 'Rechnungen', icon: FileText },
+      ];
+    }
+
+    return baseItems;
+  };
+
+  const navItems = getNavItems();
 
   const handleLogout = async () => {
     await signOut();
@@ -52,21 +75,23 @@ export default function Navigation({ user, userRole, onRoleSwitch }) {
         })}
       </nav>
 
-      <div className="px-4 py-3 bg-gray-800 rounded-lg mb-3">
-        <p className="text-xs text-gray-500 mb-2">Test-Rolle</p>
-        <select
-          value={userRole}
-          onChange={(e) => {
-            switchUserRole(user.id, e.target.value);
-            onRoleSwitch(e.target.value);
-          }}
-          className="w-full px-2 py-1 bg-gray-700 text-white text-sm rounded border border-gray-600"
-        >
-          <option value="owner">👤 Owner</option>
-          <option value="technician">🔧 Techniker</option>
-          <option value="manager">📋 Manager</option>
-        </select>
-      </div>
+        {(userRole === 'owner' || window.location.hostname === 'localhost') && (
+          <div className="px-4 py-3 bg-gray-800 rounded-lg mb-3">
+            <p className="text-xs text-gray-500 mb-2">Test-Rolle</p>
+            <select
+              value={userRole}
+              onChange={(e) => {
+                switchUserRole(user.id, e.target.value);
+                onRoleSwitch(e.target.value);
+              }}
+              className="w-full px-2 py-1 bg-gray-700 text-white text-sm rounded border border-gray-600"
+            >
+              <option value="owner">👤 Owner</option>
+              <option value="technician">🔧 Techniker</option>
+              <option value="manager">📋 Manager</option>
+            </select>
+          </div>
+        )}
 
       <div className="p-4 border-t border-gray-700 space-y-4">
         <div className="px-4 py-3 bg-gray-800 rounded-lg">
